@@ -7,6 +7,7 @@ import com.algaworks.algasensors.device.management.domain.model.Sensor;
 import com.algaworks.algasensors.device.management.domain.model.SensorId;
 import com.algaworks.algasensors.device.management.domain.repository.SensorRepository;
 import io.hypersistence.tsid.TSID;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -54,6 +55,45 @@ public class SensorController {
         sensor = sensorRepository.saveAndFlush(sensor);
 
         return convertToModel(sensor);
+    }
+
+    @PutMapping("/{sensorId}")
+    @ResponseStatus(HttpStatus.OK)
+    public SensorOutput update(@PathVariable TSID sensorId, @Valid @RequestBody SensorInput input) {
+
+        Sensor sensor = sensorRepository.findById(new SensorId(sensorId)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        sensor.setName(input.getName());
+        sensor.setIp(input.getIp());
+        sensor.setLocation(input.getLocation());
+        sensor.setProtocol(input.getProtocol());
+        sensor.setModel(input.getModel());
+
+        sensorRepository.saveAndFlush(sensor);
+        return convertToModel(sensor);
+
+    }
+
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@RequestParam TSID sensorId) {
+        Sensor sensor = sensorRepository.findById(new SensorId(sensorId)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        sensorRepository.deleteById(sensor.getId());
+    }
+
+    @PutMapping("/{sensorId}/enable")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void enable(@PathVariable TSID sensorId) {
+        Sensor sensor = sensorRepository.findById(new SensorId(sensorId)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        sensor.setEnabled(true);
+        sensorRepository.saveAndFlush(sensor);
+    }
+
+    @DeleteMapping("/{sensorId}/enable")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void disable(@PathVariable TSID sensorId) {
+        Sensor sensor = sensorRepository.findById(new SensorId(sensorId)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        sensor.setEnabled(false);
+        sensorRepository.saveAndFlush(sensor);
     }
 
     private static SensorOutput convertToModel(Sensor sensor) {
